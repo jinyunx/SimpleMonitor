@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" href="https://jscdn.com.cn/highcharts/images/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1">	<meta name="description" content="">
+    <title>简单监控</title>
+    <script src="https://code.highcharts.com.cn/highcharts/highcharts.js"></script>
+    <script src="https://code.highcharts.com.cn/highcharts/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com.cn/highcharts/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com.cn/highcharts/modules/oldie.js"></script>
+    <script src="https://code.highcharts.com.cn/highcharts-plugins/highcharts-zh_CN.js"></script>
+    <script src="chart.js"></script>
+    <script src="app.js"></script>
+</head>
+<body>
+
+<div id="left" style="overflow: auto; float:left; width:50%; height:100%;">
+    <div id="graph-index" class="" style="float:left;width:100%;padding-top:10px;">
+        <div id="attr-index" style="float:left; width:80%">
+        </div>
+    </div>
+</div>
+
+<div id="right" style="float:right ; width:50%; height:100%;">
+    <div id="container" style="max-width:800px;height:1600px"></div>
+</div>
+
+<script>
+    start(document.getElementById("attr-index"),document.getElementById("container"));
+</script>
+</body>
+</html>
