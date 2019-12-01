@@ -50,4 +50,5 @@ func handleUdpData(d *db, data []byte, remoteAddr *net.UDPAddr) {
 	}
 
 	_ = d.updateInstanceAttr(a.Instance, a.Time - (a.Time % 60), a.Attr, a.Counter)
+	_ = d.updateInstanceAttr(a.Instance, a.Time - (a.Time % 60) + 60, a.Attr, 0)
 }
