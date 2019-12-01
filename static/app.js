@@ -52,18 +52,29 @@ function queryReportData(container, instance, attr, name) {
         if (httpRequest.readyState === 4 && httpRequest.status === 200) {
             console.log(httpRequest.responseText);
             d = JSON.parse(httpRequest.responseText);
-            data = [];
-            d["counters"].forEach((item)=>{
-                data.push([item["t"] * 1000, item["counter"]])
-            });
             console.log(d);
+
+            today = [];
+            d["today"]["counters"].forEach((item)=>{
+                today.push([item["t"] * 1000, item["counter"]])
+            });
+
+            yestoday = [];
+            d["yestoday"]["counters"].forEach((item)=>{
+                yestoday.push([item["t"] * 1000 + 24 * 3600 * 1000, item["counter"]])
+            });
+
+            lastWeek = [];
+            d["last_week"]["counters"].forEach((item)=>{
+                lastWeek.push([item["t"] * 1000 + 7 * 24 * 3600 * 1000, item["counter"]])
+            });
 
             containerName = "container" + attr;
             elem = document.createElement("div");
             elem.id = containerName;
             elem.style = "max-width:800px;height:400px;border: 1px solid black;margin: 2px";
             container.insertBefore(elem, container.firstChild);
-            draw(containerName,instance, name, [],[], data);
+            draw(containerName,instance, name, lastWeek,yestoday, today);
         }
     };
 }

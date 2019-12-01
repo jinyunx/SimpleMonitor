@@ -96,6 +96,8 @@ func (d *db) queryByInstaceAndAttr(table string, instance string, attr int) (res
 	sqlStmt := fmt.Sprintf("SELECT time,counter FROM attr_report_%s where instance=\"%s\" and attr=%d;",
 		table, instance, attr)
 
+	log.Println(sqlStmt)
+
 	rows, err := d.handle.Query(sqlStmt)
 	if err != nil {
 		return results

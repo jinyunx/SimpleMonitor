@@ -18,7 +18,7 @@ func httpServer(d *db, port string) {
 	mux.HandleFunc("/attr", func(writer http.ResponseWriter, request *http.Request) {
 		handleAttrRequest(d, writer, request)
 	})
-	err := http.ListenAndServe(":" + port, mux)
+	err := http.ListenAndServe(":"+port, mux)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,11 +47,32 @@ func handleDataRequest(d *db, w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Attr cannot be 0")
 	}
 
-	now := time.Now().Unix()
-	date := now - now % (3600 * 24)
-	tableName := time.Unix(date, 0).Format("2006_01_02")
-	result := d.queryByInstaceAndAttr(tableName, instance, attr)
-	resultJson, _ := json.Marshal(&result)
+	now := time.Now()
+	t := now.Unix()
+	today := t - t%(3600*24)
+	t = now.Add(-time.Hour * 24).Unix()
+	yestoday := t - t%(3600*24)
+	t = now.Add(-time.Hour * 24 * 7).Unix()
+	lastWeek := t - t%(3600*24)
+
+	type threeDayAttr struct {
+		Today    attrCounterArr `json:"today"`
+		Yestoday attrCounterArr `json:"yestoday"`
+		LastWeek attrCounterArr `json:"last_week"`
+	}
+
+	threeDay := threeDayAttr{}
+
+	tableName := time.Unix(today, 0).Format("2006_01_02")
+	threeDay.Today = d.queryByInstaceAndAttr(tableName, instance, attr)
+
+	tableName = time.Unix(yestoday, 0).Format("2006_01_02")
+	threeDay.Yestoday = d.queryByInstaceAndAttr(tableName, instance, attr)
+
+	tableName = time.Unix(lastWeek, 0).Format("2006_01_02")
+	threeDay.LastWeek = d.queryByInstaceAndAttr(tableName, instance, attr)
+
+	resultJson, _ := json.Marshal(&threeDay)
 	fmt.Fprint(w, string(resultJson))
 }
 
@@ -62,7 +83,7 @@ func handleAttrRequest(d *db, w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now().Unix()
-	date := now - now % (3600 * 24)
+	date := now - now%(3600*24)
 	tableName := time.Unix(date, 0).Format("2006_01_02")
 	result := d.queryByInstace(tableName, instance)
 	resultJson, _ := json.Marshal(&result)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func testClient() {
 		log.Println("send data")
 
 		a := attrData{
-			Instance: "instance1",
+			Instance: "instance"+strconv.Itoa(rand.Int()%10),
 			Time:     time.Now().Unix(),
 			Attr:     rand.Int() % 10,
 			Counter:  rand.Int() % 1000,
