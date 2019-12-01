@@ -14,8 +14,9 @@ const (
                             "name" TEXT)`
 
 	kCreateViewInfo = `CREATE TABLE IF NOT EXISTS "view_info" (
-                            "view_name" TEXT NOT NULL PRIMARY KEY, 
-                            "instances" TEXT)`
+                            "view" TEXT, 
+                            "instance" TEXT,
+                            PRIMARY KEY(view, instance))`
 
 	kCreateInstanceTable = `CREATE TABLE IF NOT EXISTS "%s" (
 								"instance" TEXT,
@@ -92,10 +93,7 @@ type attrCounterArr struct {
 	Counters []attrCounter `json:"counters"`
 }
 
-func (d *db) queryByInstaceAndAttr(table string, instance string, attr int) (results attrCounterArr) {
-	sqlStmt := fmt.Sprintf("SELECT time,counter FROM attr_report_%s where instance=\"%s\" and attr=%d;",
-		table, instance, attr)
-
+func (d *db) queryAttrSequence(sqlStmt string) (results attrCounterArr) {
 	log.Println(sqlStmt)
 
 	rows, err := d.handle.Query(sqlStmt)
@@ -115,6 +113,24 @@ func (d *db) queryByInstaceAndAttr(table string, instance string, attr int) (res
 	return results
 }
 
+func (d *db) queryByInstaceAndAttr(table string, instance string, attr int) (results attrCounterArr) {
+	sqlStmt := fmt.Sprintf("SELECT time,counter FROM attr_report_%s where instance=\"%s\" and attr=%d;",
+		table, instance, attr)
+
+	return d.queryAttrSequence(sqlStmt)
+}
+
+func (d *db) queryByViewAndAttr(table string, view string, attr int)(results attrCounterArr) {
+	sqlStmt := fmt.Sprintf(
+		`SELECT time,sum(counter) FROM
+		(SELECT instance AS view_instance FROM view_info WHERE view="%s") 
+		INNER JOIN attr_report_%s ON view_instance = attr_report_%s.instance
+		where attr=%d
+		GROUP BY time`, view, table, table, attr)
+
+	return d.queryAttrSequence(sqlStmt)
+}
+
 type attrName struct {
 	Attr int    `json:"attr"`
 	Name string `json:"name"`
@@ -124,12 +140,7 @@ type attrArr struct {
 	Attr []attrName `json:"attr_name"`
 }
 
-func (d *db) queryByInstace(table string, instance string) (results attrArr) {
-	sqlStmt := fmt.Sprintf(
-		`SELECT attr, name FROM 
-		(SELECT DISTINCT attr AS attr_report_attr FROM attr_report_%s WHERE instance="%s")
-		INNER JOIN attr_info ON attr_report_attr = attr_info.attr`, table, instance)
-
+func (d *db) queryAttr(sqlStmt string) (results attrArr) {
 	rows, err := d.handle.Query(sqlStmt)
 	if err != nil {
 		return results
@@ -146,4 +157,24 @@ func (d *db) queryByInstace(table string, instance string) (results attrArr) {
 		results.Attr = append(results.Attr, attrName{attr, name})
 	}
 	return results
+}
+
+func (d *db) queryAttrByInstance(table string, instance string) (results attrArr) {
+	sqlStmt := fmt.Sprintf(
+		`SELECT attr, name FROM 
+		(SELECT DISTINCT attr AS attr_report_attr FROM attr_report_%s WHERE instance="%s")
+		INNER JOIN attr_info ON attr_report_attr = attr_info.attr`, table, instance)
+
+	return d.queryAttr(sqlStmt)
+}
+
+func (d *db) queryAttrByView(table string, view string) (results attrArr) {
+	sqlStmt := fmt.Sprintf(
+		`SELECT attr, name FROM
+		(SELECT DISTINCT attr AS attr_report_attr FROM 
+  			(SELECT instance AS view_instance FROM view_info WHERE view="%s")
+  			INNER JOIN attr_report_%s ON view_instance = attr_report_%s.instance)
+		INNER JOIN attr_info ON attr_report_attr = attr_info.attr`, view, table, table)
+
+	return d.queryAttr(sqlStmt)
 }

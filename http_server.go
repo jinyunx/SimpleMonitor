@@ -38,13 +38,23 @@ func getQueryInt(r *http.Request, key string) int {
 
 func handleDataRequest(d *db, w http.ResponseWriter, r *http.Request) {
 	instance := getQuery(r, "instance")
-	if len(instance) == 0 {
-		fmt.Fprint(w, "Instance cannot be emty")
+	view := getQuery(r, "view")
+	if len(instance) == 0 && len(view) == 0 {
+		fmt.Fprint(w, "Instance and view cannot both be emty")
+		return
 	}
 
 	attr := getQueryInt(r, "attr")
 	if attr == 0 {
 		fmt.Fprint(w, "Attr cannot be 0")
+		return
+	}
+
+	key := view
+	f := d.queryByViewAndAttr
+	if len(view) == 0 {
+		key = instance
+		f = d.queryByInstaceAndAttr
 	}
 
 	now := time.Now()
@@ -64,13 +74,13 @@ func handleDataRequest(d *db, w http.ResponseWriter, r *http.Request) {
 	threeDay := threeDayAttr{}
 
 	tableName := time.Unix(today, 0).Format("2006_01_02")
-	threeDay.Today = d.queryByInstaceAndAttr(tableName, instance, attr)
+	threeDay.Today = f(tableName, key, attr)
 
 	tableName = time.Unix(yestoday, 0).Format("2006_01_02")
-	threeDay.Yestoday = d.queryByInstaceAndAttr(tableName, instance, attr)
+	threeDay.Yestoday = f(tableName, key, attr)
 
 	tableName = time.Unix(lastWeek, 0).Format("2006_01_02")
-	threeDay.LastWeek = d.queryByInstaceAndAttr(tableName, instance, attr)
+	threeDay.LastWeek = f(tableName, key, attr)
 
 	resultJson, _ := json.Marshal(&threeDay)
 	fmt.Fprint(w, string(resultJson))
@@ -78,14 +88,22 @@ func handleDataRequest(d *db, w http.ResponseWriter, r *http.Request) {
 
 func handleAttrRequest(d *db, w http.ResponseWriter, r *http.Request) {
 	instance := getQuery(r, "instance")
-	if len(instance) == 0 {
-		fmt.Fprint(w, "Instance cannot be emty")
+	view := getQuery(r, "view")
+	if len(instance) == 0 && len(view) == 0 {
+		fmt.Fprint(w, "Instance and view cannot both be emty")
+		return
 	}
 
 	now := time.Now().Unix()
 	date := now - now%(3600*24)
 	tableName := time.Unix(date, 0).Format("2006_01_02")
-	result := d.queryByInstace(tableName, instance)
+
+	result := attrArr{}
+	if len(view) != 0 {
+		result = d.queryAttrByView(tableName, view)
+	} else {
+		result = d.queryAttrByInstance(tableName, instance)
+	}
 	resultJson, _ := json.Marshal(&result)
 	fmt.Fprint(w, string(resultJson))
 }

@@ -12,12 +12,12 @@ import (
 
 func main() {
 	d := db{}
-	if err := d.open("test"); err != nil {
+	if err := d.open("monitor.db"); err != nil {
 		log.Fatal(err)
 	}
 
 	go httpServer(&d, "8080")
-	go udpServer(&d, "54218")
+	go udpServer(&d, "34218")
 
 	testClient()
 }
@@ -26,7 +26,7 @@ func testClient() {
 	//connect server
 	conn, err := net.DialUDP("udp", nil, &net.UDPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
-		Port: 54218,
+		Port: 34218,
 	})
 
 	if err != nil {
@@ -38,9 +38,9 @@ func testClient() {
 		log.Println("send data")
 
 		a := attrData{
-			Instance: "instance"+strconv.Itoa(rand.Int()%10),
+			Instance: "instance"+strconv.Itoa(rand.Int()%2+1),
 			Time:     time.Now().Unix(),
-			Attr:     rand.Int() % 10,
+			Attr:     rand.Int() % 2 + 1,
 			Counter:  rand.Int() % 1000,
 		}
 
