@@ -1,4 +1,12 @@
 function start(attr_container,graph_container) {
+    if (getQueryString("detail") === "1") {
+        detailPage(attr_container,graph_container)
+    } else {
+        mainPage(attr_container,graph_container)
+    }
+}
+
+function mainPage(attr_container,graph_container) {
     view = getQueryString("view");
     instance = getQueryString("instance");
     v = view;
@@ -83,10 +91,16 @@ function queryReportData(container, v, vName, attr, name) {
 
             containerName = "container" + attr;
             elem = document.createElement("div");
+            elem.ondblclick = function(){
+                if (vName !== "view")
+                    return;
+                window.open("/?detail=1&view="+v+"&attr="+attr)
+            };
+
             elem.id = containerName;
             elem.style = "max-width:800px;height:400px;border: 1px solid black;margin: 2px";
             container.insertBefore(elem, container.firstChild);
-            draw(containerName, v, name, lastWeek,yestoday, today);
+            draw(containerName, v, attr + ":" + name, lastWeek,yestoday, today);
         }
     };
 }

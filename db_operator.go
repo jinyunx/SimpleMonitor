@@ -120,7 +120,7 @@ func (d *db) queryByInstaceAndAttr(table string, instance string, attr int) (res
 	return d.queryAttrSequence(sqlStmt)
 }
 
-func (d *db) queryByViewAndAttr(table string, view string, attr int)(results attrCounterArr) {
+func (d *db) queryByViewAndAttr(table string, view string, attr int) (results attrCounterArr) {
 	sqlStmt := fmt.Sprintf(
 		`SELECT time,sum(counter) FROM
 		(SELECT instance AS view_instance FROM view_info WHERE view="%s") 
@@ -128,6 +128,15 @@ func (d *db) queryByViewAndAttr(table string, view string, attr int)(results att
 		where attr=%d
 		GROUP BY time`, view, table, table, attr)
 
+	return d.queryAttrSequence(sqlStmt)
+}
+
+func (d *db) queryByViewAndAttrAndInstance(table string, view string, attr int, instance string) (results attrCounterArr) {
+	sqlStmt := fmt.Sprintf(
+		`SELECT time,counter FROM
+		(SELECT instance AS view_instance FROM view_info WHERE view="%s")
+		INNER JOIN attr_report_%s ON view_instance = attr_report_%s.instance
+		WHERE attr=%d AND instance="%s"`, view, table, table, attr, instance)
 	return d.queryAttrSequence(sqlStmt)
 }
 
@@ -177,4 +186,29 @@ func (d *db) queryAttrByView(table string, view string) (results attrArr) {
 		INNER JOIN attr_info ON attr_report_attr = attr_info.attr`, view, table, table)
 
 	return d.queryAttr(sqlStmt)
+}
+
+type viewInfo struct {
+	Instances []string `json:"instances"`
+}
+
+func (d *db) queryInstanceByView(view string) (v viewInfo) {
+	sqlStmt := fmt.Sprintf(`SELECT instance FROM view_info WHERE view="%s";`, view)
+	rows, err := d.handle.Query(sqlStmt)
+	if err != nil {
+		log.Println(sqlStmt, err)
+		return v
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		instance := ""
+		err = rows.Scan(&instance)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		v.Instances = append(v.Instances, instance)
+	}
+	return v
 }

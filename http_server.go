@@ -18,6 +18,12 @@ func httpServer(d *db, port string) {
 	mux.HandleFunc("/attr", func(writer http.ResponseWriter, request *http.Request) {
 		handleAttrRequest(d, writer, request)
 	})
+	mux.HandleFunc("/view_info", func(writer http.ResponseWriter, request *http.Request) {
+		handleViewInfoRequest(d, writer, request)
+	})
+	mux.HandleFunc("/view_detail", func(writer http.ResponseWriter, request *http.Request) {
+		handleViewDetailRequest(d, writer, request)
+	})
 	err := http.ListenAndServe(":"+port, mux)
 	if err != nil {
 		log.Fatal(err)
@@ -105,5 +111,56 @@ func handleAttrRequest(d *db, w http.ResponseWriter, r *http.Request) {
 		result = d.queryAttrByInstance(tableName, instance)
 	}
 	resultJson, _ := json.Marshal(&result)
+	fmt.Fprint(w, string(resultJson))
+}
+
+func handleViewInfoRequest(d *db, w http.ResponseWriter, r *http.Request) {
+	view := getQuery(r, "view")
+	if len(view) == 0 {
+		fmt.Fprint(w, "View cannot be emty")
+		return
+	}
+
+	v := d.queryInstanceByView(view)
+
+	resultJson, _ := json.Marshal(&v)
+	fmt.Fprint(w, string(resultJson))
+}
+
+func handleViewDetailRequest(d *db, w http.ResponseWriter, r *http.Request) {
+	instance := getQuery(r, "instance")
+	view := getQuery(r, "view")
+	attr := getQueryInt(r, "attr")
+
+	if len(instance) == 0 || len(view) == 0 || attr == 0 {
+		fmt.Fprint(w, "Instance and view and attr cannot be emty")
+		return
+	}
+
+	now := time.Now()
+	t := now.Unix()
+	today := t - t%(3600*24)
+	t = now.Add(-time.Hour * 24).Unix()
+	yestoday := t - t%(3600*24)
+	t = now.Add(-time.Hour * 24 * 7).Unix()
+	lastWeek := t - t%(3600*24)
+
+	type threeDayAttr struct {
+		Today    attrCounterArr `json:"today"`
+		Yestoday attrCounterArr `json:"yestoday"`
+		LastWeek attrCounterArr `json:"last_week"`
+	}
+
+	threeDay := threeDayAttr{}
+	tableName := time.Unix(today, 0).Format("2006_01_02")
+	threeDay.Today = d.queryByViewAndAttrAndInstance(tableName, view, attr, instance)
+
+	tableName = time.Unix(yestoday, 0).Format("2006_01_02")
+	threeDay.Yestoday = d.queryByViewAndAttrAndInstance(tableName, view, attr, instance)
+
+	tableName = time.Unix(lastWeek, 0).Format("2006_01_02")
+	threeDay.LastWeek = d.queryByViewAndAttrAndInstance(tableName, view, attr, instance)
+
+	resultJson, _ := json.Marshal(&threeDay)
 	fmt.Fprint(w, string(resultJson))
 }
