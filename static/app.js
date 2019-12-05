@@ -18,7 +18,7 @@ function mainPage(attr_container,graph_container) {
     queryAttrAndName(v, vName, function (attrArr) {
         console.log(attrArr);
         attrArr.forEach((item)=>{
-            fillAttrDiv(attr_container, item["name"]);
+            fillAttrDiv(attr_container, item["name"], item["attr"]);
             queryReportData(graph_container, v, vName, item["attr"], item["name"]);
         });
     });
@@ -33,12 +33,19 @@ function getQueryString(name) {
     return null;
 }
 
-function fillAttrDiv(container, attr) {
+function getContainerId(attr) {
+    return "container"+attr
+}
+
+function fillAttrDiv(container, attrName, attr) {
     a = document.createElement("a");
     a.href = "javascript:void(0);";
-    a.title = attr;
-    a.onclick = "";
-    a.innerText = attr;
+    a.title = attrName;
+    a.onclick = function () {
+        id = getContainerId(attr);
+        document.getElementById(id).scrollIntoView(true);
+    };
+    a.innerText = attrName;
 
     div = document.createElement("div");
     div.style = "padding: 10px 20px 0 0;float:left";
@@ -89,7 +96,7 @@ function queryReportData(container, v, vName, attr, name) {
                 });
             }
 
-            containerName = "container" + attr;
+            containerName = getContainerId(attr);
             elem = document.createElement("div");
             elem.ondblclick = function(){
                 if (vName !== "view")

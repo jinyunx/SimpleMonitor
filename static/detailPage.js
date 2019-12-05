@@ -5,7 +5,7 @@ function detailPage(attr_container,graph_container) {
     queryInstances(view, function (instances) {
         console.log(instances);
         instances.forEach((item)=>{
-            fillAttrDiv(attr_container, item);
+            fillAttrDiv(attr_container, item, item);
             queryDetailReportData(graph_container, view, item, attr);
         });
     });
