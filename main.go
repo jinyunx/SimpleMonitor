@@ -6,9 +6,52 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
 	"time"
 )
+
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+	go logRotate()
+}
+
+func getLogName() string {
+	now := time.Now()
+	return "log/monitor_" + now.Format("2006-01-02") + ".log"
+}
+
+func logRotate() {
+	if err := os.MkdirAll("log", os.ModePerm); err != nil {
+		log.Fatalln(err)
+	}
+
+	lastLogName := getLogName()
+	logFile, err := os.OpenFile(lastLogName,
+		os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	if err != nil {
+		log.Fatalf("Log file open error : %v", err)
+	}
+
+	log.SetOutput(logFile)
+
+	ticker := time.NewTicker(time.Minute)
+	for range ticker.C {
+		if lastLogName != getLogName() {
+			lastLogName = getLogName()
+			logFile.Close()
+			logFile, err = os.OpenFile(lastLogName,
+				os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+			if err != nil {
+				log.Fatalf("Log file open error : %v", err)
+			}
+
+			log.SetOutput(logFile)
+		}
+	}
+}
 
 func main() {
 	d := db{}
@@ -35,7 +78,7 @@ func testClient() {
 	}
 
 	for {
-		log.Println("send data")
+		fmt.Println("send data")
 
 		a := attrData{
 			Instance: "instance"+strconv.Itoa(rand.Int()%2+1),
